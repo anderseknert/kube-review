@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	admissionv1 "k8s.io/api/admission/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/uuid"
@@ -54,14 +55,18 @@ func main() {
 		}
 	}
 
+	// TODO: Must be a better way..
+	r, _ := meta.UnsafeGuessKindToResource(*kind)
+	resource := &metav1.GroupVersionResource{Group: r.Group, Version: r.Version, Resource: r.Resource}
+
 	admissionRequest := &admissionv1.AdmissionRequest{
 		UID:                uuid.NewUUID(),
 		Kind:               *metaKind,
-		Resource:           metav1.GroupVersionResource{Group: kind.Group, Version: kind.Version, Resource: "deployments"}, // TODO
-		SubResource:        "",                                                                                             // TODO
+		Resource:           *resource,
+		SubResource:        "", // TODO
 		RequestKind:        metaKind,
-		RequestResource:    &metav1.GroupVersionResource{Group: kind.Group, Version: kind.Version, Resource: "deployments"}, // TODO
-		RequestSubResource: "",                                                                                              // TODO
+		RequestResource:    resource,
+		RequestSubResource: "", // TODO
 		Name:               name,
 		Namespace:          namespace,
 		Operation:          admissionv1.Create, // TODO
