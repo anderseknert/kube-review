@@ -1,0 +1,14 @@
+linters:
+  enable-all: true
+  disable:
+  - forbidigo
+  - godox
+  - wsl
+  - gci
+  - exhaustivestruct
+  - goerr113
+  # Deprecated
+  - maligned
+  - scopelint
+  - interfacer
+  - golint

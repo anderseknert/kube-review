@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"
-	"kube-review/pkg/review"
 	"log"
 	"os"
+
+	"kube-review/pkg/admission"
+
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -48,7 +50,7 @@ webhooks`,
 				}
 			}
 
-			req, err := review.AdmissionReviewRequest(input, action)
+			req, err := admission.AdmissionReviewRequest(input, action)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -58,16 +60,13 @@ webhooks`,
 	}
 )
 
-func init() {
+func Execute() {
 	rootCmd.PersistentFlags().StringVar(
 		&action,
 		"action",
 		"create",
 		"Action to simulate (create | update | delete | connect) (default: create)",
 	)
-}
-
-func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

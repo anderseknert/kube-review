@@ -1,4 +1,4 @@
-package review
+package admission
 
 import (
 	"encoding/json"
@@ -6,15 +6,14 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	v1 "k8s.io/api/authentication/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
-
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+//goland:noinspection GoNameStartsWithPackageName
 func AdmissionReviewRequest(input []byte, action string) ([]byte, error) {
 	actionMapper := map[string]admissionv1.Operation{
 		"create":  admissionv1.Create,
@@ -50,14 +49,11 @@ func AdmissionReviewRequest(input []byte, action string) ([]byte, error) {
 	var name, namespace string
 	unstructured, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(object)
 	metadata := unstructured["metadata"]
-	switch t := metadata.(type) {
-	case map[string]interface{}:
-		switch n := t["name"].(type) {
-		case string:
+	if t, ok := metadata.(map[string]interface{}); ok {
+		if n, ok2 := t["name"].(string); ok2 {
 			name = n
 		}
-		switch n := t["namespace"].(type) {
-		case string:
+		if n, ok2 := t["namespace"].(string); ok2 {
 			namespace = n
 		}
 	}
@@ -80,16 +76,10 @@ func AdmissionReviewRequest(input []byte, action string) ([]byte, error) {
 		Namespace:          namespace,
 		Operation:          admissionAction,
 		UserInfo:           userInfo,
-		Object: runtime.RawExtension{
-			Object: object.DeepCopyObject(),
-		},
-		OldObject: runtime.RawExtension{
-			Object: object.DeepCopyObject(),
-		},
-		DryRun: &dryRun,
-		Options: runtime.RawExtension{
-			Object: &metav1.CreateOptions{},
-		},
+		Object:             getNewObject(object, admissionAction),
+		OldObject:          getOldObject(object, admissionAction),
+		DryRun:             &dryRun,
+		Options:            getOptions(admissionAction),
 	}
 
 	admissionReview := &admissionv1.AdmissionReview{
@@ -97,10 +87,42 @@ func AdmissionReviewRequest(input []byte, action string) ([]byte, error) {
 		Request:  admissionRequest,
 	}
 
-	requestJson, err := json.MarshalIndent(&admissionReview, "", "    ")
+	requestJSON, err := json.MarshalIndent(&admissionReview, "", "    ")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return requestJson, nil
+	return requestJSON, nil
+}
+
+func getNewObject(object runtime.Object, action admissionv1.Operation) runtime.RawExtension {
+	if action == admissionv1.Delete {
+		return runtime.RawExtension{}
+	}
+	return runtime.RawExtension{
+		Object: object.DeepCopyObject(),
+	}
+}
+
+func getOldObject(object runtime.Object, action admissionv1.Operation) runtime.RawExtension {
+	if action == admissionv1.Create || action == admissionv1.Connect {
+		return runtime.RawExtension{}
+	}
+	return runtime.RawExtension{
+		Object: object.DeepCopyObject(),
+	}
+}
+
+func getOptions(action admissionv1.Operation) runtime.RawExtension {
+	switch action {
+	case admissionv1.Create:
+		return runtime.RawExtension{Object: &metav1.CreateOptions{}}
+	case admissionv1.Update:
+		return runtime.RawExtension{Object: &metav1.UpdateOptions{}}
+	case admissionv1.Delete:
+		return runtime.RawExtension{Object: &metav1.DeleteOptions{}}
+	default:
+		// CONNECT
+		return runtime.RawExtension{}
+	}
 }
