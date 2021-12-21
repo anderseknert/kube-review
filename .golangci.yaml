@@ -7,8 +7,13 @@ linters:
   - gci
   - exhaustivestruct
   - goerr113
+  - gofumpt
   # Deprecated
   - maligned
   - scopelint
   - interfacer
   - golint
+
+linters-settings:
+  exhaustive:
+    default-signifies-exhaustive: true

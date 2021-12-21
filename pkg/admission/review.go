@@ -3,7 +3,6 @@ package admission
 import (
 	"encoding/json"
 	"fmt"
-
 	admissionv1 "k8s.io/api/admission/v1"
 	v1 "k8s.io/api/authentication/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -14,17 +13,10 @@ import (
 )
 
 //goland:noinspection GoNameStartsWithPackageName
-func AdmissionReviewRequest(input []byte, action string) ([]byte, error) {
-	actionMapper := map[string]admissionv1.Operation{
-		"create":  admissionv1.Create,
-		"update":  admissionv1.Update,
-		"delete":  admissionv1.Delete,
-		"connect": admissionv1.Connect,
-	}
-	var admissionAction admissionv1.Operation
-	var found bool
-	if admissionAction, found = actionMapper[action]; !found {
-		return nil, fmt.Errorf("unknown action: %v, choose one of 'create', 'update', 'delete' or 'connect'", action)
+func AdmissionReviewRequest(input []byte, action string, username string, groups []string) ([]byte, error) {
+	operation, err := actionToOperation(action)
+	if err != nil {
+		return nil, err
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -33,30 +25,17 @@ func AdmissionReviewRequest(input []byte, action string) ([]byte, error) {
 		return nil, err
 	}
 
-	userInfo := v1.UserInfo{
-		Username: "kube-review",
-		Groups:   []string{"kube-review"},
-		UID:      string(uuid.NewUUID()),
-		Extra:    map[string]v1.ExtraValue{},
-	}
-
 	metaKind := &metav1.GroupVersionKind{
 		Group:   kind.Group,
 		Version: kind.Version,
 		Kind:    kind.Kind,
 	}
 
-	var name, namespace string
-	unstructured, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(object)
-	metadata := unstructured["metadata"]
-	if t, ok := metadata.(map[string]interface{}); ok {
-		if n, ok2 := t["name"].(string); ok2 {
-			name = n
-		}
-		if n, ok2 := t["namespace"].(string); ok2 {
-			namespace = n
-		}
+	unstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(object)
+	if err != nil {
+		return nil, err
 	}
+	name, namespace := getNameAndNamespace(unstructured)
 
 	// TODO: Must be a better way?
 	r, _ := meta.UnsafeGuessKindToResource(*kind)
@@ -74,12 +53,12 @@ func AdmissionReviewRequest(input []byte, action string) ([]byte, error) {
 		RequestSubResource: "", // TODO
 		Name:               name,
 		Namespace:          namespace,
-		Operation:          admissionAction,
-		UserInfo:           userInfo,
-		Object:             getNewObject(object, admissionAction),
-		OldObject:          getOldObject(object, admissionAction),
+		Operation:          *operation,
+		UserInfo:           getUserInfo(username, groups),
+		Object:             getNewObject(object, *operation),
+		OldObject:          getOldObject(object, *operation),
 		DryRun:             &dryRun,
-		Options:            getOptions(admissionAction),
+		Options:            getOptions(*operation),
 	}
 
 	admissionReview := &admissionv1.AdmissionReview{
@@ -93,6 +72,43 @@ func AdmissionReviewRequest(input []byte, action string) ([]byte, error) {
 	}
 
 	return requestJSON, nil
+}
+
+func actionToOperation(action string) (*admissionv1.Operation, error) {
+	actionMapper := map[string]admissionv1.Operation{
+		"create":  admissionv1.Create,
+		"update":  admissionv1.Update,
+		"delete":  admissionv1.Delete,
+		"connect": admissionv1.Connect,
+	}
+	var admissionAction admissionv1.Operation
+	var found bool
+	if admissionAction, found = actionMapper[action]; !found {
+		return nil, fmt.Errorf("unknown action: %v, choose one of 'create', 'update', 'delete' or 'connect'", action)
+	}
+	return &admissionAction, nil
+}
+
+func getNameAndNamespace(unstructured map[string]interface{}) (name string, namespace string) {
+	metadata := unstructured["metadata"]
+	if t, ok := metadata.(map[string]interface{}); ok {
+		if n, ok2 := t["name"].(string); ok2 {
+			name = n
+		}
+		if n, ok2 := t["namespace"].(string); ok2 {
+			namespace = n
+		}
+	}
+	return name, namespace
+}
+
+func getUserInfo(username string, groups []string) v1.UserInfo {
+	return v1.UserInfo{
+		Username: username,
+		Groups:   groups,
+		UID:      string(uuid.NewUUID()),
+		Extra:    map[string]v1.ExtraValue{},
+	}
 }
 
 func getNewObject(object runtime.Object, action admissionv1.Operation) runtime.RawExtension {
@@ -116,11 +132,26 @@ func getOldObject(object runtime.Object, action admissionv1.Operation) runtime.R
 func getOptions(action admissionv1.Operation) runtime.RawExtension {
 	switch action {
 	case admissionv1.Create:
-		return runtime.RawExtension{Object: &metav1.CreateOptions{}}
+		return runtime.RawExtension{Object: &metav1.CreateOptions{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "CreateOptions",
+				APIVersion: "meta.k8s.io/v1",
+			},
+		}}
 	case admissionv1.Update:
-		return runtime.RawExtension{Object: &metav1.UpdateOptions{}}
+		return runtime.RawExtension{Object: &metav1.UpdateOptions{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "UpdateOptions",
+				APIVersion: "meta.k8s.io/v1",
+			},
+		}}
 	case admissionv1.Delete:
-		return runtime.RawExtension{Object: &metav1.DeleteOptions{}}
+		return runtime.RawExtension{Object: &metav1.DeleteOptions{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "DeleteOptions",
+				APIVersion: "meta.k8s.io/v1",
+			},
+		}}
 	default:
 		// CONNECT
 		return runtime.RawExtension{}

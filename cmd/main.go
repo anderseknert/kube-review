@@ -12,8 +12,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type parameters struct {
+	action string
+	as     string
+	groups []string
+}
+
 var (
-	action  string
+	params parameters
+
 	rootCmd = &cobra.Command{
 		Use:   "kube-review",
 		Short: "create admission review requests from provided kubernetes resources",
@@ -41,8 +48,7 @@ webhooks`,
 				}
 			} else {
 				if filename == "" {
-					fmt.Println("No filename provided and no data to read from stdin")
-					os.Exit(1)
+					log.Fatal("No filename provided and no data to read from stdin")
 				}
 				input, err = ioutil.ReadFile(filename)
 				if err != nil {
@@ -50,7 +56,7 @@ webhooks`,
 				}
 			}
 
-			req, err := admission.AdmissionReviewRequest(input, action)
+			req, err := admission.AdmissionReviewRequest(input, params.action, params.as, params.groups)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -62,10 +68,22 @@ webhooks`,
 
 func Execute() {
 	rootCmd.PersistentFlags().StringVar(
-		&action,
+		&params.action,
 		"action",
 		"create",
 		"Action to simulate (create | update | delete | connect) (default: create)",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&params.as,
+		"as",
+		"kube-review",
+		"Name of user",
+	)
+	rootCmd.PersistentFlags().StringSliceVar(
+		&params.groups,
+		"as-group",
+		[]string{},
+		"Group(s) of user (may be repeated) (default: empty)",
 	)
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
