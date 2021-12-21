@@ -3,6 +3,7 @@ package admission
 import (
 	"encoding/json"
 	"fmt"
+
 	admissionv1 "k8s.io/api/admission/v1"
 	v1 "k8s.io/api/authentication/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -13,7 +14,7 @@ import (
 )
 
 //goland:noinspection GoNameStartsWithPackageName
-func AdmissionReviewRequest(input []byte, action string, username string, groups []string) ([]byte, error) {
+func CreateAdmissionReviewRequest(input []byte, action string, username string, groups []string) ([]byte, error) {
 	operation, err := actionToOperation(action)
 	if err != nil {
 		return nil, err
@@ -33,7 +34,7 @@ func AdmissionReviewRequest(input []byte, action string, username string, groups
 
 	unstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(object)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse object, %w", err)
 	}
 	name, namespace := getNameAndNamespace(unstructured)
 
@@ -52,13 +53,15 @@ func AdmissionReviewRequest(input []byte, action string, username string, groups
 		RequestResource:    resource,
 		RequestSubResource: "", // TODO
 		Name:               name,
-		Namespace:          namespace,
 		Operation:          *operation,
 		UserInfo:           getUserInfo(username, groups),
 		Object:             getNewObject(object, *operation),
 		OldObject:          getOldObject(object, *operation),
 		DryRun:             &dryRun,
 		Options:            getOptions(*operation),
+	}
+	if namespace != "" {
+		admissionRequest.Namespace = namespace
 	}
 
 	admissionReview := &admissionv1.AdmissionReview{
@@ -68,7 +71,7 @@ func AdmissionReviewRequest(input []byte, action string, username string, groups
 
 	requestJSON, err := json.MarshalIndent(&admissionReview, "", "    ")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed encoding object to JSON %w", err)
 	}
 
 	return requestJSON, nil
@@ -86,6 +89,7 @@ func actionToOperation(action string) (*admissionv1.Operation, error) {
 	if admissionAction, found = actionMapper[action]; !found {
 		return nil, fmt.Errorf("unknown action: %v, choose one of 'create', 'update', 'delete' or 'connect'", action)
 	}
+
 	return &admissionAction, nil
 }
 
@@ -99,6 +103,7 @@ func getNameAndNamespace(unstructured map[string]interface{}) (name string, name
 			namespace = n
 		}
 	}
+
 	return name, namespace
 }
 
@@ -115,6 +120,7 @@ func getNewObject(object runtime.Object, action admissionv1.Operation) runtime.R
 	if action == admissionv1.Delete {
 		return runtime.RawExtension{}
 	}
+
 	return runtime.RawExtension{
 		Object: object.DeepCopyObject(),
 	}
@@ -124,6 +130,7 @@ func getOldObject(object runtime.Object, action admissionv1.Operation) runtime.R
 	if action == admissionv1.Create || action == admissionv1.Connect {
 		return runtime.RawExtension{}
 	}
+
 	return runtime.RawExtension{
 		Object: object.DeepCopyObject(),
 	}

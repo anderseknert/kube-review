@@ -19,8 +19,9 @@ type parameters struct {
 }
 
 var (
+	//nolint:gochecknoglobals
 	params parameters
-
+	//nolint:gochecknoglobals
 	rootCmd = &cobra.Command{
 		Use:   "kube-review",
 		Short: "create admission review requests from provided kubernetes resources",
@@ -56,7 +57,7 @@ webhooks`,
 				}
 			}
 
-			req, err := admission.AdmissionReviewRequest(input, params.action, params.as, params.groups)
+			req, err := admission.CreateAdmissionReviewRequest(input, params.action, params.as, params.groups)
 			if err != nil {
 				log.Fatal(err)
 			}
