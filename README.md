@@ -4,8 +4,8 @@ Simple command line utility to transform a provided Kubernetes resource into a K
 would be sent from the Kubernetes API server if [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) 
 (i.e. webhook) was configured.
 
-```shell
-$ cat deployment.yaml
+**deployment.yaml**
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,8 +26,13 @@ spec:
         name: nginx
         ports:
         - containerPort: 8080
-
+```
+**Command**
+```shell
 $ kube-review deployment.yaml
+```
+**Output**
+```json
 {
     "kind": "AdmissionReview",
     "apiVersion": "admission.k8s.io/v1",
@@ -121,8 +126,12 @@ $ kube-review deployment.yaml
 kube-review can either be provided a filename with a resource to create an admission review for, or can read data from 
 stdin. This allows easily piping resources from a kube cluster and into kube-review.
 
+**Command**
 ```shell
-$ kubectl get service gatekeeper-webhook-service -o yaml | kube-review
+$ kubectl get service gatekeeper-webhook-service -o yaml | kube-review --action update
+```
+**Output**
+```json
 {
     "kind": "AdmissionReview",
     "apiVersion": "admission.k8s.io/v1",
@@ -135,7 +144,7 @@ $ kubectl get service gatekeeper-webhook-service -o yaml | kube-review
         },
         "name": "gatekeeper-webhook-service",
         "namespace": "gatekeeper-system",
-        "operation": "CREATE",
+        "operation": "UPDATE",
         "userInfo": {
             "username": "kube-review",
             "uid": "42eac911-a8ec-4d72-9eb1-e6c466328085"
