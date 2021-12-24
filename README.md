@@ -180,7 +180,8 @@ deny["Deployment must define number of replicas explicitly"] {
 We could either run kube-review with a deployment from disk, and pipe the output into `opa eval`:
 
 ```shell
-$ kube-review deployment.yaml | opa eval --format pretty --stdin-input --data policy.rego data.admission.deny
+$ kube-review deployment.yaml \
+| opa eval --format pretty --stdin-input --data policy.rego data.admission.deny
 [
   "Deployment must define number of replicas explicitly"
 ]
@@ -188,7 +189,9 @@ $ kube-review deployment.yaml | opa eval --format pretty --stdin-input --data po
 Or we could run the policy against any resource in our cluster in the same manner:
 
 ```shell
-$ kubectl get deployment my-microservice -o yaml | kube-review | opa eval --format pretty --stdin-input --data policy.rego data.admission.deny
+$ kubectl get deployment my-microservice -o yaml \
+| kube-review \
+| opa eval --format pretty --stdin-input --data policy.rego data.admission.deny
 [
   "Deployment must have at least 2 replicas"
 ]
