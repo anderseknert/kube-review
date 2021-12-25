@@ -216,7 +216,7 @@ $ kubectl get deployment my-microservice -o yaml \
   "Deployment must have at least 2 replicas"
 ]
 ```
-Alternatively, we could use `curl` to send the data into a running OPA server with the help of curl:
+Alternatively, we could use `curl` to send the data into a running OPA server:
 
 **Command**
 ```shell
