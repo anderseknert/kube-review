@@ -1,0 +1,24 @@
+name: Post Merge
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release-build:
+    name: Release Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Build Mac, Linux, Windows
+        run: make build-all
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: binaries
+          path: _release
