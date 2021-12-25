@@ -1,19 +1,19 @@
 prepare-release:
-	mkdir -p _release/darwin/amd64 _release/darwin/arm64 _release/linux/amd64 _release/windows/amd64
+	mkdir -p _release
 
 clean:
 	rm -rf _release
 
 build-darwin-amd64: prepare-release
-	GOOS=darwin GOARCH=amd64 go build -o _release/darwin/amd64/kube-review
+	GOOS=darwin GOARCH=amd64 go build -o _release/kube-review-darwin-amd64
 
 build-darwin-arm64: prepare-release
-	GOOS=darwin GOARCH=arm64 go build -o _release/darwin/arm64/kube-review
+	GOOS=darwin GOARCH=arm64 go build -o _release/kube-review-darwin-arm64
 
 build-linux-amd64: prepare-release
-	GOOS=linux GOARCH=amd64 go build -o _release/linux/amd64/kube-review
+	GOOS=linux GOARCH=amd64 go build -o _release/kube-review-linux-amd64
 
 build-windows-amd64: prepare-release
-	GOOS=linux GOARCH=amd64 go build -o _release/windows/amd64/kube-review.exe
+	GOOS=linux GOARCH=amd64 go build -o _release/kube-review-windows-amd64.exe
 
 build-all: build-darwin-amd64 build-darwin-arm64 build-linux-amd64 build-windows-amd64
