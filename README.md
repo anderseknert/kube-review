@@ -121,6 +121,12 @@ $ kube-review deployment.yaml
 * Testing Kubernetes admission webhook receivers without Kubernetes (CI/CD pipelines, faster integration tests, etc.)
 * Quickly be able to author, and test, admission control policies with tools like [Open Policy Agent](https://www.openpolicyagent.org/)
 
+## Installation
+
+Find the latest release for your platform at the [release page](https://github.com/anderseknert/kube-review/releases/latest).
+Once downloaded, rename it to `kube-review` (or `kube-review.exe` for Windows if not using WSL), 
+allow it to be executed, and put it somewhere on your `$PATH`.
+
 ## Running kube-review
 
 kube-review can either be provided a filename with a resource to create an admission review for, or can read data from 
