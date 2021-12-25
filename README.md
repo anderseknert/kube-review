@@ -161,6 +161,12 @@ $ kubectl get service gatekeeper-webhook-service -o yaml | kube-review --action 
 | `--as`       | string | kube-review | Name of user or service account for userInfo attributes                                    |
 | `--as-group` | string | none        | Name of group this user or service account belongs to. May be repeated for multiple groups |
 
+The `action` provided has the following effects on the produced `AdmissionReview` object:
+
+* `create` and `connect`: `request.oldObject` is `null`
+* `delete`: `request.object` is `null`
+* All actions change the value of `request.operation` and `request.options`
+
 ## Using with Open Policy Agent
 
 Assuming we have a policy that denies any deployment where the number of replicas is either undefined or below two:
