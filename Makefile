@@ -1,8 +1,11 @@
-prepare-release:
-	mkdir -p _release
-
 clean:
 	rm -rf _release
+
+lint:
+	golangci-lint run
+
+prepare-release:
+	mkdir -p _release
 
 build-darwin-amd64: prepare-release
 	GOOS=darwin GOARCH=amd64 go build -o _release/kube-review-darwin-amd64

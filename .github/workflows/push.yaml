@@ -6,6 +6,16 @@ on:
       - main
 
 jobs:
+  golangci-lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: latest
+
   release-build-darwin-amd64:
     name: Release Build darwin/amd64
     runs-on: ubuntu-latest
