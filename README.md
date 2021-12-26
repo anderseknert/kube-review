@@ -1,8 +1,8 @@
 # kube-review
 
-Simple command line utility to transform a provided Kubernetes resource into a Kubernetes AdmissionReview request, as it 
-would be sent from the Kubernetes API server if [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) 
-(i.e. webhook) was configured.
+Simple command line utility to transform a provided Kubernetes resource into a Kubernetes AdmissionReview request, as 
+sent from the Kubernetes API server if [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) 
+(i.e. webhook) is configured.
 
 **deployment.yaml**
 ```yaml
@@ -230,3 +230,7 @@ $ kubectl get deployment my-microservice -o yaml \
     "Deployment must define number of replicas explicitly"
 ]
 ```
+
+## Limitations
+
+* kube-review cannot create `AdmissionReview` objects from CRDs, as there is currently no way to register new schemas
