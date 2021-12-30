@@ -1,7 +1,7 @@
 # kube-review
 
 Simple command line utility to transform a provided Kubernetes resource into a Kubernetes AdmissionReview request, as 
-sent from the Kubernetes API server if [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) 
+sent from the Kubernetes API server when [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) 
 (i.e. webhook) is configured.
 
 **deployment.yaml**
@@ -229,6 +229,15 @@ $ kubectl get deployment my-microservice -o yaml \
 [
     "Deployment must define number of replicas explicitly"
 ]
+```
+
+If your policies are written for [OPA Gatekeeper](https://github.com/open-policy-agent/gatekeeper), simply rename the 
+`request` object in the admission request to `review`:
+
+```shell
+$ kube-review deployment.yaml \
+| opa eval --format pretty --stdin-input '{"review": input.request}' \
+| opa eval --format pretty --stdin-input --data policy.rego data.admission.deny
 ```
 
 ## Limitations
