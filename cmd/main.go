@@ -18,10 +18,10 @@ type parameters struct {
 	groups []string
 }
 
+//nolint:gochecknoglobals
 var (
-	//nolint:gochecknoglobals
-	params parameters
-	//nolint:gochecknoglobals
+	params  parameters
+	version = "" // Set by build command
 	rootCmd = &cobra.Command{
 		Use:   "kube-review",
 		Short: "create admission review requests from provided kubernetes resources",
@@ -65,6 +65,15 @@ webhooks`,
 			fmt.Println(string(req))
 		},
 	}
+	versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Print the version of kube-review",
+		Long:  `Print the version of kube-review`,
+		Run: func(_ *cobra.Command, args []string) {
+			fmt.Println(version)
+			os.Exit(0)
+		},
+	}
 )
 
 func Execute() {
@@ -86,6 +95,8 @@ func Execute() {
 		[]string{},
 		"Group(s) of user (may be repeated) (default: empty)",
 	)
+	rootCmd.AddCommand(versionCmd)
+
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
