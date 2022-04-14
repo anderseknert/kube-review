@@ -17,7 +17,7 @@ jobs:
       - uses: golangci/golangci-lint-action@v3
         name: golangci-lint
         with:
-          version: latest
+          version: v1.44.2
 
   release-build-darwin-amd64:
     name: Release Build darwin/amd64
