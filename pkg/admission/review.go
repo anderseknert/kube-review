@@ -1,6 +1,7 @@
 package admission
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -9,7 +10,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -23,40 +26,81 @@ func CreateAdmissionReviewRequest(input []byte, action string, username string, 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	object, kind, err := decode(input, nil, nil)
 	if err != nil {
-		return nil, err
-	}
-
-	metaKind := &metav1.GroupVersionKind{
-		Group:   kind.Group,
-		Version: kind.Version,
-		Kind:    kind.Kind,
+		// Failure to decode, likely due to unrecognized type, try unstructured
+		return fromUnstructured(input, operation, username, groups)
 	}
 
 	unstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(object)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse object, %w", err)
 	}
-	name, namespace := getNameAndNamespace(unstructured)
 
-	// TODO: Must be a better way?
-	r, _ := meta.UnsafeGuessKindToResource(*kind)
+	userInfo := getUserInfo(username, groups)
+	newObject := getNewObject(object, *operation)
+	oldObject := getOldObject(object, *operation)
+
+	return createAdmissionRequest(unstructured, *kind, operation, userInfo, newObject, oldObject)
+}
+
+func fromUnstructured(input []byte, operation *admissionv1.Operation, username string, groups []string) ([]byte, error) {
+	var object interface{}
+
+	// Try "brute force" serialization of unknown type
+	err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(input), 4096).Decode(&object)
+	if err != nil {
+		return nil, err
+	}
+	unstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&object)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse object, %w", err)
+	}
+
+	version, err := schema.ParseGroupVersion(unstructured["apiVersion"].(string))
+	if err != nil {
+		return nil, err
+	}
+	withKind := version.WithKind(unstructured["kind"].(string))
+	kind := &schema.GroupVersionKind{
+		Group:   withKind.Group,
+		Version: withKind.Version,
+		Kind:    withKind.Kind,
+	}
+	userInfo := getUserInfo(username, groups)
+
+	var unknown runtime.Unknown
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &unknown)
+	if err != nil {
+		return nil, err
+	}
+
+	newObject := getUnknownRaw(&unknown, *operation)
+	oldObject := getOldUnknownRaw(&unknown, *operation)
+
+	return createAdmissionRequest(unstructured, *kind, operation, userInfo, newObject, oldObject)
+}
+
+func createAdmissionRequest(unstructured map[string]interface{}, gvk schema.GroupVersionKind, operation *admissionv1.Operation, user v1.UserInfo, object, oldObject runtime.RawExtension) ([]byte, error) {
+	dryRun := true
+
+	name, namespace := getNameAndNamespace(unstructured)
+	r, _ := meta.UnsafeGuessKindToResource(gvk)
 	resource := &metav1.GroupVersionResource{Group: r.Group, Version: r.Version, Resource: r.Resource}
 
-	dryRun := true
+	kind := gvkMeta(gvk.Group, gvk.Version, gvk.Kind)
 
 	admissionRequest := &admissionv1.AdmissionRequest{
 		UID:                uuid.NewUUID(),
-		Kind:               *metaKind,
+		Kind:               *kind,
 		Resource:           *resource,
 		SubResource:        "", // TODO
-		RequestKind:        metaKind,
+		RequestKind:        kind,
 		RequestResource:    resource,
 		RequestSubResource: "", // TODO
 		Name:               name,
 		Operation:          *operation,
-		UserInfo:           getUserInfo(username, groups),
-		Object:             getNewObject(object, *operation),
-		OldObject:          getOldObject(object, *operation),
+		UserInfo:           user,
+		Object:             object,
+		OldObject:          oldObject,
 		DryRun:             &dryRun,
 		Options:            getOptions(*operation),
 	}
@@ -75,6 +119,14 @@ func CreateAdmissionReviewRequest(input []byte, action string, username string, 
 	}
 
 	return requestJSON, nil
+}
+
+func gvkMeta(group, version, kind string) *metav1.GroupVersionKind {
+	return &metav1.GroupVersionKind{
+		Group:   group,
+		Version: version,
+		Kind:    kind,
+	}
 }
 
 func actionToOperation(action string) (*admissionv1.Operation, error) {
@@ -116,6 +168,16 @@ func getUserInfo(username string, groups []string) v1.UserInfo {
 	}
 }
 
+func getUnknownRaw(unknown *runtime.Unknown, action admissionv1.Operation) runtime.RawExtension {
+	if action == admissionv1.Delete {
+		return runtime.RawExtension{}
+	}
+
+	return runtime.RawExtension{
+		Object: unknown,
+	}
+}
+
 func getNewObject(object runtime.Object, action admissionv1.Operation) runtime.RawExtension {
 	if action == admissionv1.Delete {
 		return runtime.RawExtension{}
@@ -123,6 +185,16 @@ func getNewObject(object runtime.Object, action admissionv1.Operation) runtime.R
 
 	return runtime.RawExtension{
 		Object: object.DeepCopyObject(),
+	}
+}
+
+func getOldUnknownRaw(unknown *runtime.Unknown, action admissionv1.Operation) runtime.RawExtension {
+	if action == admissionv1.Create || action == admissionv1.Connect {
+		return runtime.RawExtension{}
+	}
+
+	return runtime.RawExtension{
+		Object: unknown,
 	}
 }
 

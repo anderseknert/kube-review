@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"kube-review/pkg/admission"
 	"log"
 	"os"
-
-	"kube-review/pkg/admission"
 
 	"github.com/spf13/cobra"
 )
@@ -29,6 +28,10 @@ var (
 
 This is useful when e.g. writing admission controller policies or offline tests of Kubernetes admission controller 
 webhooks`,
+	}
+	createCmd = &cobra.Command{
+		Use:   "create",
+		Short: "creates an admission review request from provided kubernetes resource",
 		Run: func(cmd *cobra.Command, args []string) {
 			var filename string
 			if len(args) > 0 {
@@ -95,6 +98,7 @@ func Execute() {
 		[]string{},
 		"Group(s) of user (may be repeated) (default: empty)",
 	)
+	rootCmd.AddCommand(createCmd)
 	rootCmd.AddCommand(versionCmd)
 
 	if err := rootCmd.Execute(); err != nil {

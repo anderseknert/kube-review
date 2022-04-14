@@ -1,0 +1,15 @@
+apiVersion: config.kio.kasten.io/v1alpha1
+kind: Policy
+metadata:
+  name: sample-custom-backup-policy
+  namespace: kasten-io
+spec:
+  comment: My sample custom backup policy
+  frequency: '@daily'
+  retention:
+    daily: 30
+    weekly: 4
+    monthly: 12
+    yearly: 7
+  actions:
+    - action: backup

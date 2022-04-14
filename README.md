@@ -29,7 +29,7 @@ spec:
 ```
 **Command**
 ```shell
-$ kube-review deployment.yaml
+$ kube-review create deployment.yaml
 ```
 **Output**
 ```json
@@ -129,12 +129,12 @@ allow it to be executed, and put it somewhere on your `$PATH`.
 
 ## Running kube-review
 
-kube-review can either be provided a filename with a resource to create an admission review for, or can read data from 
-stdin. This allows easily piping resources from a kube cluster and into kube-review.
+`kube-review create` can either be provided a filename with a resource to create an admission review for, or can read 
+data from stdin. This allows easily piping resources from a kube cluster and into kube-review.
 
 **Command**
 ```shell
-$ kubectl get service gatekeeper-webhook-service -o yaml | kube-review --action update
+$ kubectl get service gatekeeper-webhook-service -o yaml | kube-review create --action update
 ```
 **Output**
 ```json
@@ -193,7 +193,7 @@ We could either run kube-review with a deployment from disk, and pipe the output
 
 **Command**
 ```shell
-$ kube-review deployment.yaml \
+$ kube-review create deployment.yaml \
 | opa eval --format pretty --stdin-input --data policy.rego data.admission.deny
 ```
 **Output**
@@ -207,7 +207,7 @@ Or we could run the policy against any resource in our cluster in the same manne
 **Command**
 ```shell
 $ kubectl get deployment my-microservice -o yaml \
-| kube-review \
+| kube-review create \
 | opa eval --format pretty --stdin-input --data policy.rego data.admission.deny
 ```
 **Output**
@@ -221,7 +221,7 @@ Alternatively, we could use `curl` to send the data into a running OPA server:
 **Command**
 ```shell
 $ kubectl get deployment my-microservice -o yaml \
-| kube-review \
+| kube-review create \
 | curl --data-binary "@-" http://localhost:8181/v0/data/admission/deny
 ```
 **Output**
@@ -235,11 +235,13 @@ If your policies are written for [OPA Gatekeeper](https://github.com/open-policy
 `request` object in the admission request to `review`:
 
 ```shell
-$ kube-review deployment.yaml \
+$ kube-review create deployment.yaml \
 | opa eval --format pretty --stdin-input '{"review": input.request}' \
 | opa eval --format pretty --stdin-input --data policy.rego data.admission.deny
 ```
 
 ## Limitations
 
-* kube-review cannot create `AdmissionReview` objects from CRDs, as there is currently no way to register new schemas
+* kube-review can create `AdmissionReview` objects from CRDs, or any "Kubernetes-like" manifest, but it makes no attempt
+  to verify that they conform to the schema of the corresponding `CustomResourceDefinition`.
+* Currently, kube-review doesn't handle subresource requests.
