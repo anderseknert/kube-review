@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"kube-review/pkg/admission"
 	"log"
 	"os"
@@ -54,7 +53,7 @@ webhooks`,
 				if filename == "" {
 					log.Fatal("No filename provided and no data to read from stdin")
 				}
-				input, err = ioutil.ReadFile(filename)
+				input, err = os.ReadFile(filename)
 				if err != nil {
 					log.Fatal(err)
 				}
