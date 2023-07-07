@@ -1,4 +1,4 @@
-VERSION := "v0.2.1"
+VERSION := "v0.3.0"
 
 LDFLAGS := "-X 'kube-review/cmd.version=$(VERSION)'"
 
