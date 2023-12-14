@@ -35,7 +35,7 @@ jobs:
         run: make build-darwin-amd64
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: binaries
@@ -57,7 +57,7 @@ jobs:
         run: make build-darwin-arm64
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: binaries
@@ -79,7 +79,7 @@ jobs:
         run: make build-linux-amd64
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: binaries
@@ -101,7 +101,7 @@ jobs:
         run: make build-windows-amd64
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: binaries
