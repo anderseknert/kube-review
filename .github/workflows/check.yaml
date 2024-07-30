@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: 1.22.2
-      - uses: golangci/golangci-lint-action@v6.0.1
+      - uses: golangci/golangci-lint-action@v6.1.0
         with:
           version: v1.57.2
       - run: go test ./...
