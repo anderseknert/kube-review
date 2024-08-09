@@ -24,6 +24,6 @@ build-linux-amd64: prepare-release
 	GOOS=linux GOARCH=amd64 go build -ldflags=$(LDFLAGS) -o _release/kube-review-linux-amd64
 
 build-windows-amd64: prepare-release
-	GOOS=linux GOARCH=amd64 go build -ldflags=$(LDFLAGS) -o _release/kube-review-windows-amd64.exe
+	GOOS=windows GOARCH=amd64 go build -ldflags=$(LDFLAGS) -o _release/kube-review-windows-amd64.exe
 
 build-all: build-darwin-amd64 build-darwin-arm64 build-linux-amd64 build-windows-amd64
