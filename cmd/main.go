@@ -3,11 +3,12 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"kube-review/pkg/admission"
 	"log"
 	"os"
 
 	"github.com/spf13/cobra"
+
+	"github.com/anderseknert/kube-review/pkg/admission"
 )
 
 type parameters struct {
@@ -23,9 +24,9 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "kube-review",
 		Short: "create admission review requests from provided kubernetes resources",
-		Long: `kube-review is a tool to help create AdmissionReview objects from ordinary Kubernetes resource files. 
+		Long: `kube-review is a tool to help create AdmissionReview objects from ordinary Kubernetes resource files.
 
-This is useful when e.g. writing admission controller policies or offline tests of Kubernetes admission controller 
+This is useful when e.g. writing admission controller policies or offline tests of Kubernetes admission controller
 webhooks`,
 	}
 	createCmd = &cobra.Command{
