@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"kube-review/cmd"
+	"github.com/anderseknert/kube-review/cmd"
 )
 
 func main() {

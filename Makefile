@@ -1,6 +1,6 @@
 VERSION := "v0.3.0"
 
-LDFLAGS := "-X 'kube-review/cmd.version=$(VERSION)'"
+LDFLAGS := "-X 'github.com/anderseknert/kube-review/cmd.version=$(VERSION)'"
 
 clean:
 	rm -rf _release
