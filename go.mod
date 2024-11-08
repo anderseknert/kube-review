@@ -1,4 +1,4 @@
-module kube-review
+module github.com/anderseknert/kube-review
 
 go 1.22.0
 
