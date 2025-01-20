@@ -1,6 +1,52 @@
+linters:
+  enable-all: true
+  disable:
+    # annoying
+    - forcetypeassert
+    - gocyclo
+    - nestif
+    - gocognit
+    - varnamelen
+    - nonamedreturns
+    - testpackage
+    - goconst
+    - gochecknoinits
+    - gochecknoglobals
+    - mnd
+    - inamedparam
+    - err113
+    - godox
+    - exhaustruct
+    - cyclop
+    - ireturn
+    - funlen
+    - gomoddirectives # need replacements for wasip1
+    - exportloopref # deprecated
+    - wrapcheck
 linters-settings:
-  exhaustive:
-    default-signifies-exhaustive: true
-
-run:
-  timeout: 5m
+  revive:
+    rules:
+      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-parameter
+      - name: unused-parameter
+        severity: warning
+        disabled: false
+        arguments:
+          - allowRegex: "^_"
+      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-receiver
+      - name: unused-receiver
+        severity: warning
+        disabled: false
+        arguments:
+          - allowRegex: "^_"
+  gci:
+    sections:
+      - standard
+      - default
+      - blank
+      - dot
+  depguard:
+    rules:
+      main:
+        deny:
+          - pkg: "gopkg.in/yaml.v2"
+            desc: use yaml.v3 only

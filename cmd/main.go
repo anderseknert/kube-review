@@ -6,9 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/anderseknert/kube-review/pkg/admission"
+	"github.com/spf13/cobra"
 )
 
 type parameters struct {
@@ -32,7 +31,7 @@ webhooks`,
 	createCmd = &cobra.Command{
 		Use:   "create",
 		Short: "creates an admission review request from provided kubernetes resource",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			var filename string
 			if len(args) > 0 {
 				filename = args[0]
@@ -65,15 +64,15 @@ webhooks`,
 				log.Fatal(err)
 			}
 
-			fmt.Println(string(req))
+			fmt.Fprintln(os.Stdout, string(req))
 		},
 	}
 	versionCmd = &cobra.Command{
 		Use:   "version",
 		Short: "Print the version of kube-review",
 		Long:  `Print the version of kube-review`,
-		Run: func(_ *cobra.Command, args []string) {
-			fmt.Println(version)
+		Run: func(*cobra.Command, []string) {
+			fmt.Fprintln(os.Stdout, version)
 			os.Exit(0)
 		},
 	}

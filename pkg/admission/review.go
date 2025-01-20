@@ -16,7 +16,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-//goland:noinspection GoNameStartsWithPackageName
 func CreateAdmissionReviewRequest(input []byte, action string, username string, groups []string) ([]byte, error) {
 	operation, err := actionToOperation(action)
 	if err != nil {
@@ -24,6 +23,7 @@ func CreateAdmissionReviewRequest(input []byte, action string, username string, 
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
+
 	object, kind, err := decode(input, nil, nil)
 	if err != nil {
 		// Failure to decode, likely due to unrecognized type, try unstructured
@@ -35,21 +35,30 @@ func CreateAdmissionReviewRequest(input []byte, action string, username string, 
 		return nil, fmt.Errorf("failed to parse object, %w", err)
 	}
 
-	userInfo := getUserInfo(username, groups)
-	newObject := getNewObject(object, *operation)
-	oldObject := getOldObject(object, *operation)
-
-	return createAdmissionRequest(unstructured, *kind, operation, userInfo, newObject, oldObject)
+	return createAdmissionRequest(
+		unstructured,
+		*kind,
+		operation,
+		getUserInfo(username, groups),
+		getNewObject(object, *operation),
+		getOldObject(object, *operation),
+	)
 }
 
-func fromUnstructured(input []byte, operation *admissionv1.Operation, username string, groups []string) ([]byte, error) {
-	var object interface{}
+func fromUnstructured(
+	input []byte,
+	operation *admissionv1.Operation,
+	username string,
+	groups []string,
+) ([]byte, error) {
+	var object any
 
 	// Try "brute force" serialization of unknown type
 	err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(input), 4096).Decode(&object)
 	if err != nil {
 		return nil, err
 	}
+
 	unstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&object)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse object, %w", err)
@@ -59,6 +68,7 @@ func fromUnstructured(input []byte, operation *admissionv1.Operation, username s
 	if err != nil {
 		return nil, err
 	}
+
 	withKind := version.WithKind(unstructured["kind"].(string))
 	kind := &schema.GroupVersionKind{
 		Group:   withKind.Group,
@@ -68,6 +78,7 @@ func fromUnstructured(input []byte, operation *admissionv1.Operation, username s
 	userInfo := getUserInfo(username, groups)
 
 	var unknown runtime.Unknown
+
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructured, &unknown)
 	if err != nil {
 		return nil, err
@@ -79,7 +90,13 @@ func fromUnstructured(input []byte, operation *admissionv1.Operation, username s
 	return createAdmissionRequest(unstructured, *kind, operation, userInfo, newObject, oldObject)
 }
 
-func createAdmissionRequest(unstructured map[string]interface{}, gvk schema.GroupVersionKind, operation *admissionv1.Operation, user v1.UserInfo, object, oldObject runtime.RawExtension) ([]byte, error) {
+func createAdmissionRequest(
+	unstructured map[string]any,
+	gvk schema.GroupVersionKind,
+	operation *admissionv1.Operation,
+	user v1.UserInfo,
+	object, oldObject runtime.RawExtension,
+) ([]byte, error) {
 	dryRun := true
 
 	name, namespace := getNameAndNamespace(unstructured)
@@ -136,7 +153,9 @@ func actionToOperation(action string) (*admissionv1.Operation, error) {
 		"delete":  admissionv1.Delete,
 		"connect": admissionv1.Connect,
 	}
+
 	var admissionAction admissionv1.Operation
+
 	var found bool
 	if admissionAction, found = actionMapper[action]; !found {
 		return nil, fmt.Errorf("unknown action: %v, choose one of 'create', 'update', 'delete' or 'connect'", action)
@@ -145,12 +164,13 @@ func actionToOperation(action string) (*admissionv1.Operation, error) {
 	return &admissionAction, nil
 }
 
-func getNameAndNamespace(unstructured map[string]interface{}) (name string, namespace string) {
+func getNameAndNamespace(unstructured map[string]any) (name string, namespace string) {
 	metadata := unstructured["metadata"]
-	if t, ok := metadata.(map[string]interface{}); ok {
+	if t, ok := metadata.(map[string]any); ok {
 		if n, ok2 := t["name"].(string); ok2 {
 			name = n
 		}
+
 		if n, ok2 := t["namespace"].(string); ok2 {
 			namespace = n
 		}
@@ -231,8 +251,9 @@ func getOptions(action admissionv1.Operation) runtime.RawExtension {
 				APIVersion: "meta.k8s.io/v1",
 			},
 		}}
-	default:
-		// CONNECT
+	case admissionv1.Connect:
 		return runtime.RawExtension{}
+	default:
+		panic(fmt.Sprintf("unknown action: %v", action))
 	}
 }
