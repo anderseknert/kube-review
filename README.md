@@ -1,7 +1,7 @@
 # kube-review
 
-Simple command line utility to transform a provided Kubernetes resource into a Kubernetes AdmissionReview request, as 
-sent from the Kubernetes API server when [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) 
+Simple command line utility to transform a provided Kubernetes resource into a Kubernetes AdmissionReview request, as
+sent from the Kubernetes API server when [dynamic admission control](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)
 (i.e. webhook) is configured.
 
 **deployment.yaml**
@@ -34,85 +34,85 @@ $ kube-review create deployment.yaml
 **Output**
 ```json
 {
-    "kind": "AdmissionReview",
-    "apiVersion": "admission.k8s.io/v1",
-    "request": {
-        "uid": "2024ee9c-c374-413c-838d-e62bcb4826be",
-        "kind": {
-            "group": "apps",
-            "version": "v1",
-            "kind": "Deployment"
-        },
-        "resource": {
-            "group": "apps",
-            "version": "v1",
-            "resource": "deployments"
-        },
-        "requestKind": {
-            "group": "apps",
-            "version": "v1",
-            "kind": "Deployment"
-        },
-        "requestResource": {
-            "group": "apps",
-            "version": "v1",
-            "resource": "deployments"
-        },
+  "kind": "AdmissionReview",
+  "apiVersion": "admission.k8s.io/v1",
+  "request": {
+    "uid": "2024ee9c-c374-413c-838d-e62bcb4826be",
+    "kind": {
+      "group": "apps",
+      "version": "v1",
+      "kind": "Deployment"
+    },
+    "resource": {
+      "group": "apps",
+      "version": "v1",
+      "resource": "deployments"
+    },
+    "requestKind": {
+      "group": "apps",
+      "version": "v1",
+      "kind": "Deployment"
+    },
+    "requestResource": {
+      "group": "apps",
+      "version": "v1",
+      "resource": "deployments"
+    },
+    "name": "nginx",
+    "operation": "CREATE",
+    "userInfo": {
+      "username": "kube-review",
+      "uid": "611a19d7-6aa5-47d2-bba3-8c5df2bffbc7"
+    },
+    "object": {
+      "kind": "Deployment",
+      "apiVersion": "apps/v1",
+      "metadata": {
         "name": "nginx",
-        "operation": "CREATE",
-        "userInfo": {
-            "username": "kube-review",
-            "uid": "611a19d7-6aa5-47d2-bba3-8c5df2bffbc7"
-        },
-        "object": {
-            "kind": "Deployment",
-            "apiVersion": "apps/v1",
-            "metadata": {
-                "name": "nginx",
-                "creationTimestamp": null,
-                "labels": {
-                    "app": "nginx"
-                }
-            },
-            "spec": {
-                "selector": {
-                    "matchLabels": {
-                        "app": "nginx"
-                    }
-                },
-                "template": {
-                    "metadata": {
-                        "creationTimestamp": null,
-                        "labels": {
-                            "app": "nginx"
-                        }
-                    },
-                    "spec": {
-                        "containers": [
-                            {
-                                "name": "nginx",
-                                "image": "nginx",
-                                "ports": [
-                                    {
-                                        "containerPort": 8080
-                                    }
-                                ],
-                                "resources": {}
-                            }
-                        ]
-                    }
-                },
-                "strategy": {}
-            },
-            "status": {}
-        },
-        "oldObject": null,
-        "dryRun": true,
-        "options": {
-            "kind": "CreateOptions",
-            "apiVersion": "meta.k8s.io/v1"
+        "creationTimestamp": null,
+        "labels": {
+          "app": "nginx"
         }
+      },
+      "spec": {
+        "selector": {
+          "matchLabels": {
+            "app": "nginx"
+          }
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "nginx"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "nginx",
+                "image": "nginx",
+                "ports": [
+                  {
+                    "containerPort": 8080
+                  }
+                ],
+                "resources": {}
+              }
+            ]
+          }
+        },
+        "strategy": {}
+      },
+      "status": {}
+    },
+    "oldObject": null,
+    "dryRun": true,
+    "options": {
+      "kind": "CreateOptions",
+      "apiVersion": "meta.k8s.io/v1"
     }
+  }
 }
 ```
 
@@ -124,12 +124,12 @@ $ kube-review create deployment.yaml
 ## Installation
 
 Find the latest release for your platform at the [release page](https://github.com/anderseknert/kube-review/releases/latest).
-Once downloaded, rename it to `kube-review` (or `kube-review.exe` for Windows if not using WSL), 
+Once downloaded, rename it to `kube-review` (or `kube-review.exe` for Windows if not using WSL),
 allow it to be executed, and put it somewhere on your `$PATH`.
 
 ## Running kube-review
 
-`kube-review create` can either be provided a filename with a resource to create an admission review for, or can read 
+`kube-review create` can either be provided a filename with a resource to create an admission review for, or can read
 data from stdin. This allows easily piping resources from a kube cluster and into kube-review.
 
 **Command**
@@ -231,7 +231,7 @@ $ kubectl get deployment my-microservice -o yaml \
 ]
 ```
 
-If your policies are written for [OPA Gatekeeper](https://github.com/open-policy-agent/gatekeeper), simply rename the 
+If your policies are written for [OPA Gatekeeper](https://github.com/open-policy-agent/gatekeeper), simply rename the
 `request` object in the admission request to `review`:
 
 ```shell
