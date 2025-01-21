@@ -14,6 +14,7 @@ type parameters struct {
 	action string
 	as     string
 	groups []string
+	indent uint8
 }
 
 //nolint:gochecknoglobals
@@ -59,7 +60,7 @@ webhooks`,
 				}
 			}
 
-			req, err := admission.CreateAdmissionReviewRequest(input, params.action, params.as, params.groups)
+			req, err := admission.CreateAdmissionReviewRequest(input, params.action, params.as, params.groups, params.indent)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -96,6 +97,12 @@ func Execute() {
 		"as-group",
 		[]string{},
 		"Group(s) of user (may be repeated) (default: empty)",
+	)
+	rootCmd.PersistentFlags().Uint8Var(
+		&params.indent,
+		"indent",
+		2,
+		"Number of spaces to indent JSON output (default: 2)",
 	)
 	rootCmd.AddCommand(createCmd)
 	rootCmd.AddCommand(versionCmd)

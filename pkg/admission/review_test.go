@@ -2,6 +2,7 @@ package admission
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 
 	v1 "k8s.io/api/admission/v1"
@@ -10,29 +11,14 @@ import (
 func TestBasicReview(t *testing.T) {
 	t.Parallel()
 
-	manifest := `apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx
-  labels:
-    app: nginx
-spec:
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - image: nginx
-        name: nginx
-        ports:
-        - containerPort: 8080`
+	manifest := mustReadFileString(t, "testdata/in.yaml")
 
 	reviewBytes, err := CreateAdmissionReviewRequest(
-		[]byte(manifest), "create", "kube-review", []string{"system:masters"},
+		[]byte(manifest),
+		"create",
+		"kube-review",
+		[]string{"system:masters"},
+		2,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -44,4 +30,15 @@ spec:
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func mustReadFileString(t *testing.T, path string) string {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return string(data)
 }
