@@ -2,11 +2,14 @@ package admission
 
 import (
 	"encoding/json"
-	v1 "k8s.io/api/admission/v1"
 	"testing"
+
+	v1 "k8s.io/api/admission/v1"
 )
 
 func TestBasicReview(t *testing.T) {
+	t.Parallel()
+
 	manifest := `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,7 +41,6 @@ spec:
 	var review v1.AdmissionReview
 
 	err = json.Unmarshal(reviewBytes, &review)
-
 	if err != nil {
 		t.Fatal(err)
 	}
