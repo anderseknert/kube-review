@@ -166,6 +166,7 @@ $ kubectl get service gatekeeper-webhook-service -o yaml | kube-review create --
 | `--action`   | string | create      | Type of operation to apply in admission review (create, update, delete, connect)           |
 | `--as`       | string | kube-review | Name of user or service account for userInfo attributes                                    |
 | `--as-group` | string | none        | Name of group this user or service account belongs to. May be repeated for multiple groups |
+| `--indent`   | int    | 2           | Number of spaces to indent JSON output                                                     |
 
 The `action` provided has the following effects on the produced `AdmissionReview` object:
 

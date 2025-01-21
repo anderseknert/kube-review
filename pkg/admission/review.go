@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	v1 "k8s.io/api/authentication/v1"
@@ -16,7 +17,13 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func CreateAdmissionReviewRequest(input []byte, action string, username string, groups []string) ([]byte, error) {
+func CreateAdmissionReviewRequest(
+	input []byte,
+	action string,
+	username string,
+	groups []string,
+	indent uint8,
+) ([]byte, error) {
 	operation, err := actionToOperation(action)
 	if err != nil {
 		return nil, err
@@ -27,7 +34,7 @@ func CreateAdmissionReviewRequest(input []byte, action string, username string, 
 	object, kind, err := decode(input, nil, nil)
 	if err != nil {
 		// Failure to decode, likely due to unrecognized type, try unstructured
-		return fromUnstructured(input, operation, username, groups)
+		return fromUnstructured(input, operation, username, groups, indent)
 	}
 
 	unstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(object)
@@ -42,6 +49,7 @@ func CreateAdmissionReviewRequest(input []byte, action string, username string, 
 		getUserInfo(username, groups),
 		getNewObject(object, *operation),
 		getOldObject(object, *operation),
+		indent,
 	)
 }
 
@@ -50,6 +58,7 @@ func fromUnstructured(
 	operation *admissionv1.Operation,
 	username string,
 	groups []string,
+	indent uint8,
 ) ([]byte, error) {
 	var object any
 
@@ -87,7 +96,7 @@ func fromUnstructured(
 	newObject := getUnknownRaw(&unknown, *operation)
 	oldObject := getOldUnknownRaw(&unknown, *operation)
 
-	return createAdmissionRequest(unstructured, *kind, operation, userInfo, newObject, oldObject)
+	return createAdmissionRequest(unstructured, *kind, operation, userInfo, newObject, oldObject, indent)
 }
 
 func createAdmissionRequest(
@@ -96,6 +105,7 @@ func createAdmissionRequest(
 	operation *admissionv1.Operation,
 	user v1.UserInfo,
 	object, oldObject runtime.RawExtension,
+	indent uint8,
 ) ([]byte, error) {
 	dryRun := true
 
@@ -130,9 +140,20 @@ func createAdmissionRequest(
 		Request:  admissionRequest,
 	}
 
-	requestJSON, err := json.MarshalIndent(&admissionReview, "", "    ")
-	if err != nil {
-		return nil, fmt.Errorf("failed encoding object to JSON %w", err)
+	var requestJSON []byte
+
+	var err error
+
+	if indent == 0 {
+		requestJSON, err = json.Marshal(&admissionReview)
+		if err != nil {
+			return nil, fmt.Errorf("failed encoding object to JSON %w", err)
+		}
+	} else {
+		requestJSON, err = json.MarshalIndent(&admissionReview, "", strings.Repeat(" ", int(indent)))
+		if err != nil {
+			return nil, fmt.Errorf("failed encoding object to JSON %w", err)
+		}
 	}
 
 	return requestJSON, nil
