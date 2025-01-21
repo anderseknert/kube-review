@@ -181,11 +181,11 @@ Assuming we have a policy that denies any deployment where the number of replica
 ```rego
 package admission
 
-deny["Deployment must have at least 2 replicas"] {
+deny contains "Deployment must have at least 2 replicas" if {
     input.request.object.spec.replicas < 2
 }
 
-deny["Deployment must define number of replicas explicitly"] {
+deny contains "Deployment must define number of replicas explicitly" if {
     not input.request.object.spec.replicas
 }
 ```
