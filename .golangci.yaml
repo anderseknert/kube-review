@@ -1,52 +1,73 @@
+version: "2"
 linters:
-  enable-all: true
+  default: all
   disable:
-    # annoying
+    - cyclop
+    - err113
+    - exhaustruct
     - forcetypeassert
-    - gocyclo
-    - nestif
+    - funlen
+    - gochecknoglobals
+    - gochecknoinits
     - gocognit
-    - varnamelen
+    - goconst
+    - gocyclo
+    - godox
+    - gomoddirectives
+    - inamedparam
+    - ireturn
+    - mnd
+    - nestif
     - nonamedreturns
     - testpackage
-    - goconst
-    - gochecknoinits
-    - gochecknoglobals
-    - mnd
-    - inamedparam
-    - err113
-    - godox
-    - exhaustruct
-    - cyclop
-    - ireturn
-    - funlen
-    - gomoddirectives # need replacements for wasip1
-    - exportloopref # deprecated
+    - varnamelen
     - wrapcheck
-linters-settings:
-  revive:
-    rules:
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-parameter
-      - name: unused-parameter
-        severity: warning
-        disabled: false
-        arguments:
-          - allowRegex: "^_"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-receiver
-      - name: unused-receiver
-        severity: warning
-        disabled: false
-        arguments:
-          - allowRegex: "^_"
-  gci:
-    sections:
-      - standard
-      - default
-      - blank
-      - dot
-  depguard:
-    rules:
-      main:
-        deny:
-          - pkg: "gopkg.in/yaml.v2"
-            desc: use yaml.v3 only
+  settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: gopkg.in/yaml.v2
+              desc: use yaml.v3 only
+    revive:
+      rules:
+        - name: unused-parameter
+          arguments:
+            - allowRegex: ^_
+          severity: warning
+          disabled: false
+        - name: unused-receiver
+          arguments:
+            - allowRegex: ^_
+          severity: warning
+          disabled: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - blank
+        - dot
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
