@@ -32,6 +32,30 @@ func TestBasicReview(t *testing.T) {
 	}
 }
 
+func TestReviewMultipleDocsFirstOneEmpty(t *testing.T) {
+	t.Parallel()
+
+	manifest := mustReadFileString(t, "testdata/twodocsfirstempty.yaml")
+
+	reviewBytes, err := CreateAdmissionReviewRequest(
+		[]byte(manifest),
+		"create",
+		"kube-review",
+		[]string{"system:masters"},
+		2,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var review v1.AdmissionReview
+
+	err = json.Unmarshal(reviewBytes, &review)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func mustReadFileString(t *testing.T, path string) string {
 	t.Helper()
 

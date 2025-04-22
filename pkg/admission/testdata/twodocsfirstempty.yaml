@@ -1,0 +1,8 @@
+# empty
+---
+apiVersion: foo/v1alpha1
+kind: foo
+metadata:
+  name: foo-bar-123
+spec:
+  bar: 1

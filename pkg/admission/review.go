@@ -62,10 +62,23 @@ func fromUnstructured(
 ) ([]byte, error) {
 	var object any
 
-	// Try "brute force" serialization of unknown type
-	err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(input), 4096).Decode(&object)
+	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(input), 4096)
+
+	// Try "brute forcre" serialization of unknown type
+	err := decoder.Decode(&object)
 	if err != nil {
 		return nil, err
+	}
+
+	// If the first object is nil, it's likely an empty document.
+	// We could keep reading until we have a non-nil object, but this feels like
+	// an unusual case already..
+	// https://github.com/anderseknert/kube-review/issues/51
+	if object == nil {
+		err = decoder.Decode(&object)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	unstructured, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&object)
