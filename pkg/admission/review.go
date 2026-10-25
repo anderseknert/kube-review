@@ -86,12 +86,22 @@ func fromUnstructured(
 		return nil, fmt.Errorf("failed to parse object, %w", err)
 	}
 
-	version, err := schema.ParseGroupVersion(unstructured["apiVersion"].(string))
+	apiVersion, ok := unstructured["apiVersion"].(string)
+	if !ok || apiVersion == "" {
+		return nil, fmt.Errorf("apiVersion must be a non-empty string")
+	}
+
+	resourceKind, ok := unstructured["kind"].(string)
+	if !ok || resourceKind == "" {
+		return nil, fmt.Errorf("kind must be a non-empty string")
+	}
+
+	version, err := schema.ParseGroupVersion(apiVersion)
 	if err != nil {
 		return nil, err
 	}
 
-	withKind := version.WithKind(unstructured["kind"].(string))
+	withKind := version.WithKind(resourceKind)
 	kind := &schema.GroupVersionKind{
 		Group:   withKind.Group,
 		Version: withKind.Version,
